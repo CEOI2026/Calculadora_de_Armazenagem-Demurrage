@@ -275,20 +275,29 @@
             color: #999;
         }
 
-        .result-copy-btn {
-            width: 100%;
+        .result-btn-group {
+            display: flex;
+            gap: 8px;
             margin-top: 12px;
+        }
+
+        .result-copy-btn,
+        .result-pdf-btn {
+            flex: 1;
             padding: 11px;
-            background: white;
-            color: #1e3a5f;
-            border: 1.5px solid #1e3a5f;
             border-radius: 4px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            flex: none;
             min-height: unset;
+            border: 1.5px solid;
+        }
+
+        .result-copy-btn {
+            background: white;
+            color: #1e3a5f;
+            border-color: #1e3a5f;
         }
 
         .result-copy-btn:hover {
@@ -296,29 +305,10 @@
             color: white;
         }
 
-        .result-btn-group {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .result-btn-group .result-copy-btn {
-            margin-top: 0;
-        }
-
         .result-pdf-btn {
-            flex: 1;
-            padding: 11px;
             background: white;
             color: #555;
-            border: 1.5px solid #bbb;
-            border-radius: 4px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex: none;
-            min-height: unset;
+            border-color: #bbb;
         }
 
         .result-pdf-btn:hover {
