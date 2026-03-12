@@ -111,6 +111,7 @@
             margin-top: 3px;
         }
 
+
         input {
             width: 100%;
             padding: 12px;
@@ -127,7 +128,7 @@
             border-color: #1e3a5f;
         }
 
-        .button-group {
+.button-group {
             display: flex;
             gap: 10px;
             margin-top: 30px;
@@ -379,6 +380,7 @@
             color: #888;
             text-align: right;
         }
+
 
         .period-item {
             background: #f9f9f9;
@@ -653,6 +655,24 @@
             renderPeriods();
         }
 
+        // Aceita YYYY-MM-DD (type=date) ou DD/MM/AAAA (escrito à mão)
+        function parseDate(str) {
+            if (!str) return null;
+            // formato do input type=date: YYYY-MM-DD
+            let m = str.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) {
+                const d = new Date(+m[1], +m[2] - 1, +m[3]);
+                return isNaN(d) ? null : d;
+            }
+            // formato escrito à mão: DD/MM/AAAA
+            m = str.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (m) {
+                const d = new Date(+m[3], +m[2] - 1, +m[1]);
+                return isNaN(d) ? null : d;
+            }
+            return null;
+        }
+
         function addCalendarDays(date, days) {
             const result = new Date(date);
             result.setDate(result.getDate() + days);
@@ -667,7 +687,7 @@
             const freeDays = parseInt(document.getElementById('freeDays').value) || 0;
             const totalDays = parseInt(document.getElementById('totalDays').value) || 0;
             const releaseDateStr = document.getElementById('releaseDate').value;
-            const releaseDate = releaseDateStr ? new Date(releaseDateStr) : null;
+            const releaseDate = parseDate(releaseDateStr);
 
             let cost = 0;
             let chargedDays = Math.max(0, totalDays - freeDays);
@@ -809,6 +829,7 @@
             document.getElementById('calculatorForm').reset();
             document.getElementById('releaseDate').value = '';
             document.getElementById('pickupDate').value = '';
+
             document.getElementById('freeDays').value = '7';
             document.getElementById('totalDays').value = '20';
             initializePeriods();
@@ -821,26 +842,35 @@
             }
         });
 
+        function clampDateYear(id) {
+            const input = document.getElementById(id);
+            if (!input.value) return;
+            const parts = input.value.split('-');
+            if (parts[0] && parts[0].length > 4) {
+                parts[0] = parts[0].slice(0, 4);
+                input.value = parts.join('-');
+            }
+        }
+
         // Inicializar ao carregar a página
         window.addEventListener('load', function() {
             initializePeriods();
-            
-            document.getElementById('releaseDate').addEventListener('change', calculateDays);
-            document.getElementById('pickupDate').addEventListener('change', calculateDays);
+            document.getElementById('releaseDate').addEventListener('change', function() {
+                clampDateYear('releaseDate');
+                calculateDays();
+            });
+            document.getElementById('pickupDate').addEventListener('change', function() {
+                clampDateYear('pickupDate');
+                calculateDays();
+            });
         });
 
         function calculateDays() {
-            const releaseDate = document.getElementById('releaseDate').value;
-            const pickupDate = document.getElementById('pickupDate').value;
+            const start = parseDate(document.getElementById('releaseDate').value);
+            const end = parseDate(document.getElementById('pickupDate').value);
 
-            if (releaseDate && pickupDate) {
-                const start = new Date(releaseDate);
-                const end = new Date(pickupDate);
-                
-                // Calcular diferença em milissegundos e converter para dias
-                const diffTime = end - start;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 para contar ambos os dias
-                
+            if (start && end) {
+                const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
                 if (diffDays > 0) {
                     document.getElementById('totalDays').value = diffDays;
                 }
