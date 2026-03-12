@@ -546,6 +546,203 @@
             }
         }
 
+        /* Batch calculator */
+        .batch-section {
+            border-top: 2px solid #dde3ec;
+            margin-top: 32px;
+            padding-top: 28px;
+        }
+
+        .batch-section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin-bottom: 6px;
+        }
+
+        .batch-section-sub {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .batch-table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 12px;
+            border: 1px solid #dde3ec;
+            border-radius: 6px;
+        }
+
+        .batch-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 560px;
+        }
+
+        .batch-table th {
+            background: #f0f4f8;
+            color: #1e3a5f;
+            font-weight: 600;
+            padding: 10px 10px;
+            text-align: left;
+            border-bottom: 1px solid #dde3ec;
+            white-space: nowrap;
+            font-size: 11px;
+            letter-spacing: 0.3px;
+        }
+
+        .batch-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #eaeef2;
+            vertical-align: middle;
+        }
+
+        .batch-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .batch-table input {
+            width: 100%;
+            padding: 7px 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 13px;
+            min-width: 80px;
+        }
+
+        .batch-table input:focus {
+            border-color: #1e3a5f;
+            outline: none;
+        }
+
+        .batch-table td.batch-remove {
+            text-align: center;
+            width: 32px;
+            padding: 0 6px;
+        }
+
+        .batch-remove-btn {
+            background: none;
+            border: none;
+            color: #d32f2f;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            min-height: unset;
+            flex: unset;
+            width: 24px;
+            height: 24px;
+            line-height: 1;
+        }
+
+        .batch-remove-btn:hover {
+            opacity: 0.7;
+            background: none;
+        }
+
+        .add-row-btn {
+            background: white;
+            color: #1e3a5f;
+            padding: 8px 16px;
+            border: 2px dashed #1e3a5f;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+            min-height: unset;
+            flex: unset;
+            margin-bottom: 16px;
+        }
+
+        .add-row-btn:hover {
+            background: #f5f5f5;
+            border-style: solid;
+        }
+
+        .batch-results {
+            margin-top: 20px;
+        }
+
+        .batch-result-item {
+            border: 1px solid #dde3ec;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .batch-result-header {
+            background: #1e3a5f;
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .batch-result-ref {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .batch-result-total {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .batch-result-subtotals {
+            display: flex;
+            gap: 0;
+        }
+
+        .batch-result-sub {
+            flex: 1;
+            padding: 8px 16px;
+            background: #f0f4f8;
+            border-bottom: 1px solid #dde3ec;
+            font-size: 12px;
+        }
+
+        .batch-result-sub:not(:last-child) {
+            border-right: 1px solid #dde3ec;
+        }
+
+        .batch-result-sub-label {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .batch-result-sub-value {
+            font-weight: 700;
+            color: #1e3a5f;
+            font-size: 14px;
+            margin-top: 2px;
+        }
+
+        .batch-result-error {
+            padding: 10px 16px;
+            color: #c62828;
+            font-size: 13px;
+            background: #fff5f5;
+        }
+
+        .batch-grand-total {
+            background: #1e3a5f;
+            color: white;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 15px;
+            border-radius: 6px;
+            margin-top: 4px;
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 0;
@@ -679,6 +876,39 @@
         </form>
 
         <div id="result"></div>
+
+        <!-- Batch Calculator -->
+        <div class="batch-section">
+            <div class="batch-section-title">Calcular Múltiplos Contentores</div>
+            <div class="batch-section-sub">As tarifas definidas acima aplicam-se a todos os contentores. Preencha os dados específicos de cada contentor.</div>
+
+            <div class="batch-table-wrapper">
+                <table class="batch-table">
+                    <thead>
+                        <tr>
+                            <th>Referência</th>
+                            <th>Descarregamento</th>
+                            <th>Levantamento</th>
+                            <th>Dias Livres<br>Storage</th>
+                            <th>Devolução</th>
+                            <th>Dias Livres<br>Detention</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="batchTableBody"></tbody>
+                </table>
+            </div>
+
+            <button type="button" class="add-row-btn" onclick="addBatchRow()">+ Adicionar Contentor</button>
+
+            <div class="button-group" style="margin-top:0;">
+                <button type="button" onclick="calculateBatch()">Calcular Todos</button>
+                <button type="button" class="secondary" onclick="clearBatch()">Limpar Tabela</button>
+            </div>
+
+            <div class="batch-results" id="batchResults"></div>
+        </div>
+
         </div>
     </div>
 
@@ -759,11 +989,13 @@
         function addDetentionPeriod() {
             detentionPeriods.push({ id: detentionPeriodCount++, days: 0, rate: 50 });
             renderDetentionPeriods();
+            saveConfig();
         }
 
         function removeDetentionPeriod(id) {
             detentionPeriods = detentionPeriods.filter(p => p.id !== id);
             renderDetentionPeriods();
+            saveConfig();
         }
 
         function renderPeriods() {
@@ -820,11 +1052,13 @@
         function addPeriod() {
             periods.push({ id: periodCount++, days: 0, rate: 50 });
             renderPeriods();
+            saveConfig();
         }
 
         function removePeriod(id) {
             periods = periods.filter(p => p.id !== id);
             renderPeriods();
+            saveConfig();
         }
 
         // Aceita YYYY-MM-DD (type=date) ou DD/MM/AAAA (escrito à mão)
@@ -1096,7 +1330,7 @@
                 lines.push('');
                 lines.push(`${'─'.repeat(42)}`);
                 lines.push(`Storage: €${cost.toFixed(2)}`);
-                lines.push(`Detention:           €${detention.cost.toFixed(2)}`);
+                lines.push(`Detention: €${detention.cost.toFixed(2)}`);
                 lines.push(`${'─'.repeat(42)}`);
                 lines.push(`TOTAL GERAL: €${grandTotal.toFixed(2)}`);
             } else {
@@ -1139,6 +1373,7 @@
             if (detCont) detCont.innerHTML = '';
             initializePeriods();
             document.getElementById('result').classList.remove('show');
+            saveConfig();
         }
 
         document.getElementById('calculatorForm').addEventListener('keypress', function(e) {
@@ -1159,7 +1394,9 @@
 
         // Inicializar ao carregar a página
         window.addEventListener('load', function() {
-            initializePeriods();
+            const restored = loadConfig();
+            if (!restored) initializePeriods();
+            addBatchRow();
             document.getElementById('releaseDate').addEventListener('change', function() {
                 clampDateYear('releaseDate');
                 calculateDays();
@@ -1183,6 +1420,226 @@
                     document.getElementById('totalDays').value = diffDays;
                 }
             }
+        }
+
+        // ── localStorage persistence ──────────────────────────────────────────
+
+        function saveConfig() {
+            const config = {
+                freeDays: document.getElementById('freeDays').value,
+                detentionFreeDays: document.getElementById('detentionFreeDays').value,
+                detentionEnabled: document.getElementById('detentionEnabled').checked,
+                periods: periods,
+                detentionPeriods: detentionPeriods,
+            };
+            try { localStorage.setItem('calcConfig', JSON.stringify(config)); } catch(e) {}
+        }
+
+        function loadConfig() {
+            let config;
+            try { config = JSON.parse(localStorage.getItem('calcConfig')); } catch(e) {}
+            if (!config) return false;
+
+            if (config.freeDays != null) document.getElementById('freeDays').value = config.freeDays;
+            if (config.periods && config.periods.length > 0) {
+                periods = config.periods;
+                periodCount = Math.max(...periods.map(p => p.id)) + 1;
+                renderPeriods();
+            }
+            if (config.detentionEnabled) {
+                document.getElementById('detentionEnabled').checked = true;
+                document.getElementById('detentionSection').classList.add('show');
+                if (config.detentionFreeDays != null) document.getElementById('detentionFreeDays').value = config.detentionFreeDays;
+                if (config.detentionPeriods && config.detentionPeriods.length > 0) {
+                    detentionPeriods = config.detentionPeriods;
+                    detentionPeriodCount = Math.max(...detentionPeriods.map(p => p.id)) + 1;
+                    renderDetentionPeriods();
+                    detentionInitialized = true;
+                }
+            }
+            return true;
+        }
+
+        // Auto-save on any tariff/config input change
+        document.addEventListener('change', function(e) {
+            if (e.target.matches('.period-input, .det-period-input, #freeDays, #detentionFreeDays, #detentionEnabled')) {
+                saveConfig();
+            }
+        });
+
+        // ── Batch Calculator ──────────────────────────────────────────────────
+
+        let batchRows = [];
+        let batchRowCount = 0;
+
+        function addBatchRow(data) {
+            const id = batchRowCount++;
+            batchRows.push({ id, ...(data || {}) });
+            renderBatchTable();
+        }
+
+        function removeBatchRow(id) {
+            batchRows = batchRows.filter(r => r.id !== id);
+            renderBatchTable();
+        }
+
+        function renderBatchTable() {
+            const tbody = document.getElementById('batchTableBody');
+            tbody.innerHTML = '';
+            batchRows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="text" data-batch-id="${row.id}" data-batch-field="ref" value="${row.ref || ''}" placeholder="CONT123"></td>
+                    <td><input type="date" data-batch-id="${row.id}" data-batch-field="releaseDate" value="${row.releaseDate || ''}"></td>
+                    <td><input type="date" data-batch-id="${row.id}" data-batch-field="pickupDate" value="${row.pickupDate || ''}"></td>
+                    <td><input type="number" data-batch-id="${row.id}" data-batch-field="freeDays" value="${row.freeDays != null ? row.freeDays : document.getElementById('freeDays').value}" min="0" style="min-width:60px;"></td>
+                    <td><input type="date" data-batch-id="${row.id}" data-batch-field="returnDate" value="${row.returnDate || ''}"></td>
+                    <td><input type="number" data-batch-id="${row.id}" data-batch-field="detentionFreeDays" value="${row.detentionFreeDays != null ? row.detentionFreeDays : document.getElementById('detentionFreeDays').value}" min="0" style="min-width:60px;"></td>
+                    <td class="batch-remove"><button type="button" class="batch-remove-btn" onclick="removeBatchRow(${row.id})" title="Remover">×</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            tbody.querySelectorAll('[data-batch-id]').forEach(input => {
+                input.addEventListener('change', updateBatchRowValue);
+                input.addEventListener('input', updateBatchRowValue);
+            });
+        }
+
+        function updateBatchRowValue(e) {
+            const id = parseInt(e.target.dataset.batchId);
+            const field = e.target.dataset.batchField;
+            const row = batchRows.find(r => r.id === id);
+            if (row) row[field] = e.target.value;
+        }
+
+        function calcStorageForRow(row) {
+            const releaseDate = parseDate(row.releaseDate);
+            const pickupDate = parseDate(row.pickupDate);
+            const freeDays = parseInt(row.freeDays) || 0;
+
+            if (!releaseDate || !pickupDate) return { error: 'Datas de descarregamento/levantamento em falta.' };
+
+            const totalDays = Math.ceil((pickupDate - releaseDate) / (1000 * 60 * 60 * 24)) + 1;
+            if (totalDays <= 0) return { error: 'Data de levantamento deve ser após descarregamento.' };
+
+            let chargedDays = Math.max(0, totalDays - freeDays);
+            let cost = 0;
+
+            for (let period of periods) {
+                if (chargedDays <= 0) break;
+                const daysInPeriod = Math.min(chargedDays, period.days || Infinity);
+                cost += daysInPeriod * period.rate;
+                chargedDays -= daysInPeriod;
+            }
+            return { cost };
+        }
+
+        function calcDetentionForRow(row) {
+            const pickupDate = parseDate(row.pickupDate);
+            const returnDate = parseDate(row.returnDate);
+            const detentionFreeDays = parseInt(row.detentionFreeDays) || 0;
+
+            if (!pickupDate || !returnDate) return null;
+
+            const baseDays = Math.ceil((returnDate - pickupDate) / (1000 * 60 * 60 * 24)) + 1;
+            if (baseDays <= 0) return null;
+
+            let remaining = Math.max(0, baseDays - detentionFreeDays);
+            let cost = 0;
+
+            for (let period of detentionPeriods) {
+                if (remaining <= 0) break;
+                const daysInPeriod = Math.min(remaining, period.days || Infinity);
+                cost += daysInPeriod * period.rate;
+                remaining -= daysInPeriod;
+            }
+            return { cost };
+        }
+
+        function calculateBatch() {
+            // Sync any unsaved input changes from DOM
+            document.querySelectorAll('[data-batch-id]').forEach(input => {
+                const id = parseInt(input.dataset.batchId);
+                const field = input.dataset.batchField;
+                const row = batchRows.find(r => r.id === id);
+                if (row) row[field] = input.value;
+            });
+
+            if (batchRows.length === 0) {
+                document.getElementById('batchResults').innerHTML = '<p style="color:#888;font-size:13px;">Adicione pelo menos um contentor.</p>';
+                return;
+            }
+
+            const detentionActive = document.getElementById('detentionEnabled').checked && detentionPeriods.length > 0;
+            let html = '';
+            let grandStorage = 0, grandDetention = 0;
+
+            batchRows.forEach(row => {
+                const ref = row.ref || '(sem referência)';
+                const storage = calcStorageForRow(row);
+
+                if (storage.error) {
+                    html += `
+                        <div class="batch-result-item">
+                            <div class="batch-result-header">
+                                <span class="batch-result-ref">${ref}</span>
+                                <span style="font-size:12px;opacity:0.7;">Erro</span>
+                            </div>
+                            <div class="batch-result-error">${storage.error}</div>
+                        </div>`;
+                    return;
+                }
+
+                grandStorage += storage.cost;
+                let detCost = 0;
+                let detHtml = '';
+
+                if (detentionActive) {
+                    const det = calcDetentionForRow(row);
+                    if (det) {
+                        detCost = det.cost;
+                        grandDetention += detCost;
+                        detHtml = `
+                            <div class="batch-result-sub">
+                                <div class="batch-result-sub-label">Detention</div>
+                                <div class="batch-result-sub-value">€${detCost.toFixed(2)}</div>
+                            </div>`;
+                    }
+                }
+
+                const total = storage.cost + detCost;
+                html += `
+                    <div class="batch-result-item">
+                        <div class="batch-result-header">
+                            <span class="batch-result-ref">${ref}</span>
+                            <span class="batch-result-total">€${total.toFixed(2)}</span>
+                        </div>
+                        <div class="batch-result-subtotals">
+                            <div class="batch-result-sub">
+                                <div class="batch-result-sub-label">Storage</div>
+                                <div class="batch-result-sub-value">€${storage.cost.toFixed(2)}</div>
+                            </div>
+                            ${detHtml}
+                        </div>
+                    </div>`;
+            });
+
+            const grandTotal = grandStorage + grandDetention;
+            html += `
+                <div class="batch-grand-total">
+                    <span>Total Geral — ${batchRows.length} contentor${batchRows.length !== 1 ? 'es' : ''}</span>
+                    <span>€${grandTotal.toFixed(2)}</span>
+                </div>`;
+
+            document.getElementById('batchResults').innerHTML = html;
+            document.getElementById('batchResults').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function clearBatch() {
+            batchRows = [];
+            batchRowCount = 0;
+            renderBatchTable();
+            document.getElementById('batchResults').innerHTML = '';
         }
     </script>
 </body>
