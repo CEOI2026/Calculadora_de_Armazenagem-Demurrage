@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Storage e Demurrage</title>
+    <title>Calculadora Storage e Detention</title>
     <style>
         * {
             margin: 0;
@@ -468,6 +468,84 @@
             margin-bottom: 20px;
         }
 
+        .detention-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 22px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .detention-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #1e3a5f;
+            flex-shrink: 0;
+        }
+
+        .detention-toggle-label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e3a5f;
+        }
+
+        .detention-section {
+            background: #f0f4f8;
+            border: 1px solid #dde3ec;
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 22px;
+            display: none;
+        }
+
+        .detention-section.show {
+            display: block;
+        }
+
+        .detention-section .form-group {
+            margin-bottom: 14px;
+        }
+
+        .detention-section .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .result-section-divider {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: #f0f4f8;
+            border-top: 1px solid #dde3ec;
+            border-bottom: 1px solid #dde3ec;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #555;
+        }
+
+        .result-grand-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: #1e3a5f;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        @media print {
+            .result-grand-total {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                background: #0d2240 !important;
+            }
+        }
+
         @media (max-width: 480px) {
             body {
                 padding: 0;
@@ -526,8 +604,8 @@
                     <img src="assets/Navex_VH (3).png" alt="NAVEX Logo">
                 </div>
                 <div class="header-text">
-                    <h1>Armazenagem & Demurrage</h1>
-                    <p>Calculadora de Custos</p>
+                    <h1>Calculadora de Storage e Detention</h1>
+                    <p>Calculadora de Custos Extra</p>
                 </div>
             </div>
         </div>
@@ -537,14 +615,14 @@
             <div class="form-group">
                 <label for="releaseDate">
                     Data de Descarregamento
-                    <span>Quando o contentor foi descarregado ao cais</span>
+                    <span>Quando o contentor foi descarregado para o cais</span>
                 </label>
                 <input type="date" id="releaseDate">
             </div>
 
             <div class="form-group">
                 <label for="pickupDate">
-                    Data de Retirada
+                    Data de Levantamento
                     <span>Quando o contentor será levantado</span>
                 </label>
                 <input type="date" id="pickupDate">
@@ -565,9 +643,33 @@
             <div class="form-group">
                 <label for="totalDays">
                     Total de Dias
-                    <span>Desde o descarregamento até à retirada</span>
+                    <span>Desde o descarregamento até ao levantamento</span>
                 </label>
                 <input type="number" id="totalDays" value="20" min="1">
+            </div>
+
+            <label class="detention-toggle">
+                <input type="checkbox" id="detentionEnabled" onchange="toggleDetention()">
+                <span class="detention-toggle-label">Incluir Detention</span>
+            </label>
+
+            <div class="detention-section" id="detentionSection">
+                <div class="form-group">
+                    <label for="returnDate">
+                        Data de Devolução
+                        <span>Quando o contentor é devolvido vazio ao armador</span>
+                    </label>
+                    <input type="date" id="returnDate">
+                </div>
+                <div class="form-group">
+                    <label for="detentionFreeDays">
+                        Dias Livres (Detention)
+                        <span>Dias acordados sem cobrança</span>
+                    </label>
+                    <input type="number" id="detentionFreeDays" value="7" min="0">
+                </div>
+                <button type="button" class="add-period-btn" onclick="addDetentionPeriod()">+ Adicionar Período Detention</button>
+                <div class="periods-container" id="detentionPeriodsContainer"></div>
             </div>
 
             <div class="button-group">
@@ -583,6 +685,8 @@
     <script>
         let periodCount = 0;
         let periods = [];
+        let detentionPeriodCount = 0;
+        let detentionPeriods = [];
         let lastResult = null;
 
         function initializePeriods() {
@@ -592,6 +696,74 @@
             ];
             periodCount = 2;
             renderPeriods();
+        }
+
+        function initializeDetentionPeriods() {
+            detentionPeriods = [
+                { id: 0, days: 10, rate: 50 },
+                { id: 1, days: 0, rate: 100 }
+            ];
+            detentionPeriodCount = 2;
+            renderDetentionPeriods();
+        }
+
+        function renderDetentionPeriods() {
+            const container = document.getElementById('detentionPeriodsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            detentionPeriods.forEach((period, index) => {
+                const isLast = index === detentionPeriods.length - 1;
+                const periodDiv = document.createElement('div');
+                periodDiv.className = 'period-item';
+                periodDiv.id = `det-period-${period.id}`;
+                periodDiv.innerHTML = `
+                    ${detentionPeriods.length > 1 ? `<button type="button" class="remove-btn" onclick="removeDetentionPeriod(${period.id})" title="Remover período">×</button>` : ''}
+                    <div class="period-header">
+                        <span class="period-title">Período ${index + 1}${isLast ? ' (em diante)' : ''}</span>
+                    </div>
+                    <div class="period-inputs" style="${isLast ? 'grid-template-columns: 1fr;' : ''}">
+                        ${!isLast ? `
+                        <div class="form-group">
+                            <label>
+                                Duração (dias)
+                                <span>Quantos dias dura este período</span>
+                            </label>
+                            <input type="number" data-det-period-id="${period.id}" data-field="days" value="${period.days}" min="0" class="det-period-input">
+                        </div>` : ''}
+                        <div class="form-group">
+                            <label>
+                                Tarifa (€/dia)
+                                <span>Custo por dia neste período</span>
+                            </label>
+                            <input type="number" data-det-period-id="${period.id}" data-field="rate" value="${period.rate}" step="0.01" min="0" class="det-period-input">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(periodDiv);
+            });
+
+            document.querySelectorAll('.det-period-input').forEach(input => {
+                input.addEventListener('change', updateDetentionPeriodValue);
+            });
+        }
+
+        function updateDetentionPeriodValue(e) {
+            const periodId = parseInt(e.target.dataset.detPeriodId);
+            const field = e.target.dataset.field;
+            const value = field === 'days' ? parseInt(e.target.value) || 0 : parseFloat(e.target.value) || 0;
+            const period = detentionPeriods.find(p => p.id === periodId);
+            if (period) period[field] = value;
+        }
+
+        function addDetentionPeriod() {
+            detentionPeriods.push({ id: detentionPeriodCount++, days: 0, rate: 50 });
+            renderDetentionPeriods();
+        }
+
+        function removeDetentionPeriod(id) {
+            detentionPeriods = detentionPeriods.filter(p => p.id !== id);
+            renderDetentionPeriods();
         }
 
         function renderPeriods() {
@@ -683,11 +855,70 @@
             return date.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
 
+        let detentionInitialized = false;
+
+        function toggleDetention() {
+            const enabled = document.getElementById('detentionEnabled').checked;
+            document.getElementById('detentionSection').classList.toggle('show', enabled);
+            if (enabled && !detentionInitialized) {
+                initializeDetentionPeriods();
+                detentionInitialized = true;
+            }
+        }
+
+        function calculateDetention(pickupDate) {
+            const enabled = document.getElementById('detentionEnabled').checked;
+            if (!enabled) return null;
+
+            const returnDateStr = document.getElementById('returnDate').value;
+            const returnDate = parseDate(returnDateStr);
+            const detentionFreeDays = parseInt(document.getElementById('detentionFreeDays').value) || 0;
+
+            if (!returnDate) return null;
+
+            // dias desde a retirada até à devolução (inclusive)
+            const baseDays = pickupDate
+                ? Math.ceil((returnDate - pickupDate) / (1000 * 60 * 60 * 24)) + 1
+                : null;
+
+            if (baseDays === null || baseDays <= 0) return null;
+
+            let remaining = Math.max(0, baseDays - detentionFreeDays);
+            let cost = 0;
+            let breakdown = [];
+            let daysFromStart = detentionFreeDays;
+
+            for (let period of detentionPeriods) {
+                if (remaining <= 0) break;
+                const daysInPeriod = Math.min(remaining, period.days || Infinity);
+                const periodCost = daysInPeriod * period.rate;
+                cost += periodCost;
+                breakdown.push({
+                    days: daysInPeriod,
+                    rate: period.rate,
+                    subtotal: periodCost,
+                    calStart: pickupDate ? addCalendarDays(pickupDate, daysFromStart) : null,
+                    calEnd: pickupDate ? addCalendarDays(pickupDate, daysFromStart + daysInPeriod - 1) : null,
+                    isLast: period.days === 0,
+                });
+                remaining -= daysInPeriod;
+                daysFromStart += daysInPeriod;
+            }
+
+            const freeDatesLabel = pickupDate && detentionFreeDays > 0
+                ? `${formatDate(pickupDate)} – ${formatDate(addCalendarDays(pickupDate, detentionFreeDays - 1))}`
+                : '';
+
+            return { cost, breakdown, detentionFreeDays, freeDatesLabel, returnDate };
+        }
+
         function calculate() {
             const freeDays = parseInt(document.getElementById('freeDays').value) || 0;
             const totalDays = parseInt(document.getElementById('totalDays').value) || 0;
             const releaseDateStr = document.getElementById('releaseDate').value;
             const releaseDate = parseDate(releaseDateStr);
+            const pickupDateStr = document.getElementById('pickupDate').value;
+            const pickupDate = parseDate(pickupDateStr);
 
             let cost = 0;
             let chargedDays = Math.max(0, totalDays - freeDays);
@@ -720,14 +951,15 @@
                 ? `${formatDate(releaseDate)} – ${formatDate(addCalendarDays(releaseDate, freeDays - 1))}`
                 : '';
 
+            const detention = calculateDetention(pickupDate);
+            const grandTotal = cost + (detention ? detention.cost : 0);
+
             let periodsHTML = '';
             breakdown.forEach((item, idx) => {
                 const isLastItem = idx === breakdown.length - 1 && periods[periods.length - 1].days === 0;
                 const periodName = `Período ${idx + 1}${isLastItem ? ' — em diante' : ''}`;
                 const datesLabel = item.calStart
-                    ? isLastItem
-                        ? `A partir de ${formatDate(item.calStart)}`
-                        : `${formatDate(item.calStart)} – ${formatDate(item.calEnd)}`
+                    ? `${formatDate(item.calStart)} – ${formatDate(item.calEnd)}`
                     : isLastItem
                         ? `Dia ${item.startDay} em diante`
                         : `Dias ${item.startDay}–${item.endDay}`;
@@ -745,12 +977,42 @@
                     </div>`;
             });
 
+            let detentionHTML = '';
+            if (detention) {
+                let detPeriodsHTML = '';
+                detention.breakdown.forEach((item, idx) => {
+                    const periodName = `Período ${idx + 1}${item.isLast ? ' — em diante' : ''}`;
+                    const datesLabel = item.calStart
+                        ? `${formatDate(item.calStart)} – ${formatDate(item.calEnd)}`
+                        : `${item.days} dias`;
+                    const calcLabel = `${item.days} dias × €${item.rate.toFixed(2)}/dia`;
+                    detPeriodsHTML += `
+                        <div class="result-period">
+                            <div class="result-period-top">
+                                <span class="result-period-name">${periodName}</span>
+                                <span class="result-period-subtotal">€${item.subtotal.toFixed(2)}</span>
+                            </div>
+                            <div class="result-period-bottom">
+                                <span class="result-period-dates">${datesLabel}</span>
+                                <span class="result-period-calc">${calcLabel}</span>
+                            </div>
+                        </div>`;
+                });
+                detentionHTML = `
+                    <div class="result-section-divider">Detention</div>
+                    <div class="result-free-days">
+                        <span class="free-label">Dias Livres — ${detention.detentionFreeDays} dias</span>
+                        <span class="free-dates">${detention.freeDatesLabel}</span>
+                    </div>
+                    ${detPeriodsHTML}`;
+            }
+
             const resultDiv = document.getElementById('result');
             const today = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
             resultDiv.innerHTML = `
                 <div class="print-header">
                     <div>
-                        <div class="print-header-title">Armazenagem & Demurrage</div>
+                        <div class="print-header-title">Storage</div>
                         <div style="font-size:12px;color:#888;margin-top:2px;">Resumo de Custos</div>
                     </div>
                     <div class="print-header-meta">
@@ -759,30 +1021,44 @@
                 </div>
                 <div class="result-header">
                     <div class="result-label">Total a Pagar</div>
-                    <div class="result-total">€${cost.toFixed(2)}</div>
+                    <div class="result-total">€${grandTotal.toFixed(2)}</div>
+                    ${detention ? `
+                    <div style="display:flex;justify-content:center;gap:24px;margin-top:10px;">
+                        <div style="text-align:center;">
+                            <div style="font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">Storage</div>
+                            <div style="font-size:18px;font-weight:700;color:rgba(255,255,255,0.85);">€${cost.toFixed(2)}</div>
+                        </div>
+                        <div style="width:1px;background:rgba(255,255,255,0.2);"></div>
+                        <div style="text-align:center;">
+                            <div style="font-size:10px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.8px;font-weight:600;">Detention</div>
+                            <div style="font-size:18px;font-weight:700;color:rgba(255,255,255,0.85);">€${detention.cost.toFixed(2)}</div>
+                        </div>
+                    </div>` : ''}
                 </div>
                 <div class="result-body">
+                    <div class="result-section-divider">Storage</div>
                     <div class="result-free-days">
                         <span class="free-label">Dias Livres — ${freeDays} dias</span>
                         <span class="free-dates">${freeDatesLabel}</span>
                     </div>
                     ${periodsHTML}
+                    ${detentionHTML}
                 </div>
                 <div class="result-btn-group">
                     <button class="result-copy-btn" onclick="copyResult()">Copiar resumo</button>
                     <button class="result-pdf-btn" onclick="exportPDF()">Exportar PDF</button>
                 </div>
             `;
-            lastResult = { cost, freeDays, freeDatesLabel, breakdown };
+            lastResult = { cost, freeDays, freeDatesLabel, breakdown, detention, grandTotal };
             resultDiv.classList.add('show');
         }
 
         function copyResult() {
             if (!lastResult) return;
-            const { cost, freeDays, freeDatesLabel, breakdown } = lastResult;
+            const { cost, freeDays, freeDatesLabel, breakdown, detention, grandTotal } = lastResult;
             const lines = [];
 
-            lines.push(`Armazenagem & Demurrage — Resumo de Custos`);
+            lines.push(`Storage — Resumo de Custos`);
             lines.push(`${'─'.repeat(42)}`);
             lines.push(`Dias Livres: ${freeDays} dias${freeDatesLabel ? '  (' + freeDatesLabel + ')' : ''}`);
             lines.push('');
@@ -791,9 +1067,7 @@
                 const isLastItem = idx === breakdown.length - 1 && periods[periods.length - 1].days === 0;
                 const periodName = `Período ${idx + 1}${isLastItem ? ' (em diante)' : ''}`;
                 const datesLabel = item.calStart
-                    ? isLastItem
-                        ? `A partir de ${formatDate(item.calStart)}`
-                        : `${formatDate(item.calStart)} – ${formatDate(item.calEnd)}`
+                    ? `${formatDate(item.calStart)} – ${formatDate(item.calEnd)}`
                     : isLastItem
                         ? `Dia ${item.startDay} em diante`
                         : `Dias ${item.startDay}–${item.endDay}`;
@@ -803,9 +1077,33 @@
                 if (idx < breakdown.length - 1) lines.push('');
             });
 
-            lines.push('');
-            lines.push(`${'─'.repeat(42)}`);
-            lines.push(`TOTAL A PAGAR: €${cost.toFixed(2)}`);
+            if (detention) {
+                lines.push('');
+                lines.push(`${'─'.repeat(42)}`);
+                lines.push(`DETENTION`);
+                lines.push(`Dias Livres: ${detention.detentionFreeDays} dias${detention.freeDatesLabel ? '  (' + detention.freeDatesLabel + ')' : ''}`);
+                lines.push('');
+                detention.breakdown.forEach((item, idx) => {
+                    const periodName = `Período ${idx + 1}${item.isLast ? ' (em diante)' : ''}`;
+                    const datesLabel = item.calStart
+                        ? `${formatDate(item.calStart)} – ${formatDate(item.calEnd)}`
+                        : `${item.days} dias`;
+                    lines.push(periodName);
+                    lines.push(`  ${datesLabel}`);
+                    lines.push(`  ${item.days} dias × €${item.rate.toFixed(2)}/dia = €${item.subtotal.toFixed(2)}`);
+                    if (idx < detention.breakdown.length - 1) lines.push('');
+                });
+                lines.push('');
+                lines.push(`${'─'.repeat(42)}`);
+                lines.push(`Storage: €${cost.toFixed(2)}`);
+                lines.push(`Detention:           €${detention.cost.toFixed(2)}`);
+                lines.push(`${'─'.repeat(42)}`);
+                lines.push(`TOTAL GERAL: €${grandTotal.toFixed(2)}`);
+            } else {
+                lines.push('');
+                lines.push(`${'─'.repeat(42)}`);
+                lines.push(`TOTAL A PAGAR: €${cost.toFixed(2)}`);
+            }
 
             navigator.clipboard.writeText(lines.join('\n')).then(() => {
                 const btn = document.querySelector('.result-copy-btn');
@@ -829,9 +1127,16 @@
             document.getElementById('calculatorForm').reset();
             document.getElementById('releaseDate').value = '';
             document.getElementById('pickupDate').value = '';
-
             document.getElementById('freeDays').value = '7';
             document.getElementById('totalDays').value = '20';
+            document.getElementById('detentionEnabled').checked = false;
+            document.getElementById('detentionSection').classList.remove('show');
+            document.getElementById('returnDate').value = '';
+            document.getElementById('detentionFreeDays').value = '7';
+            detentionInitialized = false;
+            detentionPeriods = [];
+            const detCont = document.getElementById('detentionPeriodsContainer');
+            if (detCont) detCont.innerHTML = '';
             initializePeriods();
             document.getElementById('result').classList.remove('show');
         }
@@ -862,6 +1167,9 @@
             document.getElementById('pickupDate').addEventListener('change', function() {
                 clampDateYear('pickupDate');
                 calculateDays();
+            });
+            document.getElementById('returnDate').addEventListener('change', function() {
+                clampDateYear('returnDate');
             });
         });
 
