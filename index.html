@@ -431,22 +431,24 @@
             container.innerHTML = '';
 
             periods.forEach((period, index) => {
+                const isLast = index === periods.length - 1;
                 const periodDiv = document.createElement('div');
                 periodDiv.className = 'period-item';
                 periodDiv.id = `period-${period.id}`;
                 periodDiv.innerHTML = `
                     ${periods.length > 1 ? `<button type="button" class="remove-btn" onclick="removePeriod(${period.id})" title="Remover período">×</button>` : ''}
                     <div class="period-header">
-                        <span class="period-title">Período ${index + 1}</span>
+                        <span class="period-title">Período ${index + 1}${isLast ? ' (em diante)' : ''}</span>
                     </div>
-                    <div class="period-inputs">
+                    <div class="period-inputs" style="${isLast ? 'grid-template-columns: 1fr;' : ''}">
+                        ${!isLast ? `
                         <div class="form-group">
                             <label>
                                 Duração (dias)
                                 <span>Quantos dias dura este período</span>
                             </label>
                             <input type="number" data-period-id="${period.id}" data-field="days" value="${period.days}" min="0" class="period-input">
-                        </div>
+                        </div>` : ''}
                         <div class="form-group">
                             <label>
                                 Tarifa (€/dia)
@@ -525,9 +527,13 @@
             `;
 
             breakdown.forEach((item, idx) => {
+                const isLastItem = idx === breakdown.length - 1 && periods[periods.length - 1].days === 0;
+                const periodLabel = isLastItem
+                    ? `Período ${idx + 1} (dia ${item.startDay} em diante)`
+                    : `Período ${idx + 1} (dias ${item.startDay}-${item.endDay})`;
                 detailsHTML += `
                     <div class="result-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <span>Período ${idx + 1} (dias ${item.startDay}-${item.endDay}):</span>
+                        <span>${periodLabel}:</span>
                         <span>${item.days} × €${item.rate.toFixed(2)}</span>
                     </div>
                     <div class="result-row" style="opacity: 0.9; margin-bottom: 8px;">
