@@ -470,26 +470,89 @@
         }
 
         .detention-toggle {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 0;
             margin-bottom: 22px;
             cursor: pointer;
             user-select: none;
         }
 
         .detention-toggle input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: #1e3a5f;
-            flex-shrink: 0;
+            display: none;
         }
 
-        .detention-toggle-label {
+        .detention-toggle-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 6px;
+            border: 2px solid #1e3a5f;
+            background: white;
+            color: #1e3a5f;
             font-weight: 600;
             font-size: 14px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .detention-toggle-pill::before {
+            content: '';
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid currentColor;
+            border-radius: 3px;
+            flex-shrink: 0;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .detention-toggle input[type="checkbox"]:checked + .detention-toggle-pill {
+            background: #1e3a5f;
+            color: white;
+        }
+
+        .detention-toggle input[type="checkbox"]:checked + .detention-toggle-pill::before {
+            background: white;
+            border-color: white;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 10 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 4l3 3 5-6' stroke='%231e3a5f' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-size: 10px 8px;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .detention-start-opts {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .detention-start-opts label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1.5px solid #b0bec5;
+            font-size: 13px;
+            font-weight: 500;
+            color: #555;
+            cursor: pointer;
+            user-select: none;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+            margin-bottom: 0;
+        }
+
+        .detention-start-opts input[type="radio"] {
+            display: none;
+        }
+
+        .detention-start-opts label:has(input:checked) {
+            border-color: #1e3a5f;
             color: #1e3a5f;
+            background: #eef3f9;
+            font-weight: 600;
         }
 
         .detention-section {
@@ -922,7 +985,7 @@
         <form id="calculatorForm">
             <div class="form-group">
                 <label for="releaseDate">
-                    Data de Descarregamento
+                    Data de Descarga
                     <span>Quando o contentor foi descarregado para o cais</span>
                 </label>
                 <input type="date" id="releaseDate">
@@ -951,17 +1014,30 @@
             <div class="form-group">
                 <label for="totalDays">
                     Total de Dias
-                    <span>Desde o descarregamento até ao levantamento</span>
+                    <span>Desde a descarga até ao levantamento</span>
                 </label>
                 <input type="number" id="totalDays" value="20" min="1">
             </div>
 
             <label class="detention-toggle">
-                <input type="checkbox" id="detentionEnabled" onchange="toggleDetention()">
-                <span class="detention-toggle-label">Incluir Detention</span>
+                <input type="checkbox" id="detentionEnabled" onchange="toggleDetention(); saveConfig()">
+                <span class="detention-toggle-pill">Incluir Detention</span>
             </label>
 
             <div class="detention-section" id="detentionSection">
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label style="margin-bottom:6px;">Início da contagem</label>
+                    <div class="detention-start-opts">
+                        <label>
+                            <input type="radio" name="detentionStart" value="pickup" checked>
+                            A partir do levantamento
+                        </label>
+                        <label>
+                            <input type="radio" name="detentionStart" value="release">
+                            A partir da descarga
+                        </label>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label for="returnDate">
                         Data de Devolução
@@ -1012,7 +1088,7 @@
                         <thead>
                             <tr>
                                 <th>Referência</th>
-                                <th>Descarregamento</th>
+                                <th>Descarga</th>
                                 <th>Levantamento</th>
                                 <th>Dias Livres<br>Storage</th>
                                 <th>Devolução</th>
@@ -1032,6 +1108,11 @@
                 </div>
 
                 <div class="batch-results" id="batchResults"></div>
+
+                <div class="result-btn-group" id="batchExportBtns" style="display:none;">
+                    <button class="result-copy-btn" onclick="copyBatchResult()">Copiar resumo</button>
+                    <button class="result-pdf-btn" onclick="exportBatchExcel()">Exportar Excel</button>
+                </div>
             </div>
         </div>
 
@@ -1226,7 +1307,12 @@
             }
         }
 
-        function calculateDetention(pickupDate) {
+        function getDetentionStartMode() {
+            const el = document.querySelector('input[name="detentionStart"]:checked');
+            return el ? el.value : 'pickup';
+        }
+
+        function calculateDetention(pickupDate, releaseDate) {
             const enabled = document.getElementById('detentionEnabled').checked;
             if (!enabled) return null;
 
@@ -1236,12 +1322,14 @@
 
             if (!returnDate) return null;
 
-            // dias desde a retirada até à devolução (inclusive)
-            const baseDays = pickupDate
-                ? Math.ceil((returnDate - pickupDate) / (1000 * 60 * 60 * 24)) + 1
-                : null;
+            // Início da contagem: levantamento ou descarga
+            const startMode = getDetentionStartMode();
+            const startDate = startMode === 'release' ? releaseDate : pickupDate;
 
-            if (baseDays === null || baseDays <= 0) return null;
+            if (!startDate) return null;
+
+            const baseDays = Math.ceil((returnDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            if (baseDays <= 0) return null;
 
             let remaining = Math.max(0, baseDays - detentionFreeDays);
             let cost = 0;
@@ -1257,19 +1345,20 @@
                     days: daysInPeriod,
                     rate: period.rate,
                     subtotal: periodCost,
-                    calStart: pickupDate ? addCalendarDays(pickupDate, daysFromStart) : null,
-                    calEnd: pickupDate ? addCalendarDays(pickupDate, daysFromStart + daysInPeriod - 1) : null,
+                    calStart: addCalendarDays(startDate, daysFromStart),
+                    calEnd: addCalendarDays(startDate, daysFromStart + daysInPeriod - 1),
                     isLast: period.days === 0,
                 });
                 remaining -= daysInPeriod;
                 daysFromStart += daysInPeriod;
             }
 
-            const freeDatesLabel = pickupDate && detentionFreeDays > 0
-                ? `${formatDate(pickupDate)} – ${formatDate(addCalendarDays(pickupDate, detentionFreeDays - 1))}`
+            const freeDatesLabel = detentionFreeDays > 0
+                ? `${formatDate(startDate)} – ${formatDate(addCalendarDays(startDate, detentionFreeDays - 1))}`
                 : '';
 
-            return { cost, breakdown, detentionFreeDays, freeDatesLabel, returnDate };
+            const startLabel = startMode === 'release' ? 'descarga' : 'levantamento';
+            return { cost, breakdown, detentionFreeDays, freeDatesLabel, returnDate, startLabel };
         }
 
         function calculate() {
@@ -1311,7 +1400,7 @@
                 ? `${formatDate(releaseDate)} – ${formatDate(addCalendarDays(releaseDate, freeDays - 1))}`
                 : '';
 
-            const detention = calculateDetention(pickupDate);
+            const detention = calculateDetention(pickupDate, releaseDate);
             const grandTotal = cost + (detention ? detention.cost : 0);
 
             let periodsHTML = '';
@@ -1359,7 +1448,7 @@
                         </div>`;
                 });
                 detentionHTML = `
-                    <div class="result-section-divider">Detention</div>
+                    <div class="result-section-divider">Detention <span style="font-weight:400;font-size:10px;opacity:0.7;margin-left:4px;">desde ${detention.startLabel}</span></div>
                     <div class="result-free-days">
                         <span class="free-label">Dias Livres — ${detention.detentionFreeDays} dias</span>
                         <span class="free-dates">${detention.freeDatesLabel}</span>
@@ -1678,12 +1767,17 @@
 
         function calcDetentionForRow(row) {
             const pickupDate = parseDate(row.pickupDate);
+            const releaseDate = parseDate(row.releaseDate);
             const returnDate = parseDate(row.returnDate);
             const detentionFreeDays = parseInt(row.detentionFreeDays) || 0;
 
-            if (!pickupDate || !returnDate) return null;
+            if (!returnDate) return null;
 
-            const baseDays = Math.ceil((returnDate - pickupDate) / (1000 * 60 * 60 * 24)) + 1;
+            const startMode = getDetentionStartMode();
+            const startDate = startMode === 'release' ? releaseDate : pickupDate;
+            if (!startDate) return null;
+
+            const baseDays = Math.ceil((returnDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
             if (baseDays <= 0) return null;
 
             let remaining = Math.max(0, baseDays - detentionFreeDays);
@@ -1697,6 +1791,8 @@
             }
             return { cost };
         }
+
+        let lastBatchResult = null;
 
         function calculateBatch() {
             // Sync any unsaved input changes from DOM
@@ -1715,6 +1811,7 @@
             const detentionActive = document.getElementById('detentionEnabled').checked && detentionPeriods.length > 0;
             let html = '';
             let grandStorage = 0, grandDetention = 0;
+            const resultRows = []; // for copy/export
 
             batchRows.forEach(row => {
                 const ref = row.ref || '(sem referência)';
@@ -1729,11 +1826,12 @@
                             </div>
                             <div class="batch-result-error">${storage.error}</div>
                         </div>`;
+                    resultRows.push({ ref, error: storage.error });
                     return;
                 }
 
                 grandStorage += storage.cost;
-                let detCost = 0;
+                let detCost = null; // null = não calculado (sem data)
                 let detHtml = '';
 
                 if (detentionActive) {
@@ -1746,10 +1844,18 @@
                                 <div class="batch-result-sub-label">Detention</div>
                                 <div class="batch-result-sub-value">€${detCost.toFixed(2)}</div>
                             </div>`;
+                    } else {
+                        detHtml = `
+                            <div class="batch-result-sub">
+                                <div class="batch-result-sub-label">Detention</div>
+                                <div class="batch-result-sub-value" style="color:#aaa;font-size:12px;">sem data</div>
+                            </div>`;
                     }
                 }
 
-                const total = storage.cost + detCost;
+                const total = storage.cost + (detCost ?? 0);
+                resultRows.push({ ref, storageCost: storage.cost, detCost, total });
+
                 html += `
                     <div class="batch-result-item">
                         <div class="batch-result-header">
@@ -1767,6 +1873,8 @@
             });
 
             const grandTotal = grandStorage + grandDetention;
+            lastBatchResult = { resultRows, grandStorage, grandDetention, grandTotal, detentionActive };
+
             html += `
                 <div class="batch-grand-total">
                     <span>Total Geral — ${batchRows.length} contentor${batchRows.length !== 1 ? 'es' : ''}</span>
@@ -1774,20 +1882,99 @@
                 </div>`;
 
             document.getElementById('batchResults').innerHTML = html;
+            document.getElementById('batchExportBtns').style.display = '';
             document.getElementById('batchResults').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function clearBatch() {
             batchRows = [];
             batchRowCount = 0;
+            lastBatchResult = null;
             renderBatchTable();
             document.getElementById('batchResults').innerHTML = '';
+            document.getElementById('batchExportBtns').style.display = 'none';
+        }
+
+        function copyBatchResult() {
+            if (!lastBatchResult) return;
+            const { resultRows, grandStorage, grandDetention, grandTotal, detentionActive } = lastBatchResult;
+            const sep = '─'.repeat(52);
+            const lines = [];
+            lines.push('RESUMO — MÚLTIPLOS CONTENTORES');
+            lines.push(sep);
+
+            resultRows.forEach(row => {
+                if (row.error) {
+                    lines.push(`${row.ref}  →  ERRO: ${row.error}`);
+                    return;
+                }
+                const detStr = detentionActive
+                    ? (row.detCost != null ? `  |  Detention: €${row.detCost.toFixed(2)}` : '  |  Detention: sem data')
+                    : '';
+                lines.push(`${row.ref}  →  Storage: €${row.storageCost.toFixed(2)}${detStr}  |  TOTAL: €${row.total.toFixed(2)}`);
+            });
+
+            lines.push(sep);
+            if (detentionActive) {
+                lines.push(`Storage total:   €${grandStorage.toFixed(2)}`);
+                lines.push(`Detention total: €${grandDetention.toFixed(2)}`);
+                lines.push(sep);
+            }
+            lines.push(`TOTAL GERAL: €${grandTotal.toFixed(2)}`);
+
+            navigator.clipboard.writeText(lines.join('\n')).then(() => {
+                const btn = document.querySelector('#batchExportBtns .result-copy-btn');
+                const orig = btn.textContent;
+                btn.textContent = 'Copiado!';
+                btn.style.background = '#1e3a5f';
+                btn.style.color = 'white';
+                setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 2000);
+            });
+        }
+
+        function exportBatchExcel() {
+            if (!lastBatchResult) return;
+            const { resultRows, grandStorage, grandDetention, grandTotal, detentionActive } = lastBatchResult;
+
+            const headers = ['Referência', 'Storage (€)'];
+            if (detentionActive) headers.push('Detention (€)');
+            headers.push('Total (€)');
+
+            const data = [headers];
+            resultRows.forEach(row => {
+                if (row.error) {
+                    const r = [row.ref, 'ERRO: ' + row.error];
+                    if (detentionActive) r.push('');
+                    r.push('');
+                    data.push(r);
+                    return;
+                }
+                const r = [row.ref, row.storageCost];
+                if (detentionActive) r.push(row.detCost != null ? row.detCost : '');
+                r.push(row.total);
+                data.push(r);
+            });
+
+            // Totals row
+            const totalsRow = ['TOTAL', grandStorage];
+            if (detentionActive) totalsRow.push(grandDetention);
+            totalsRow.push(grandTotal);
+            data.push([]);
+            data.push(totalsRow);
+
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{ wch: 20 }, { wch: 14 }, ...(detentionActive ? [{ wch: 14 }] : []), { wch: 14 }];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Resultados');
+            const today = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `resultados_contentores_${today}.xlsx`);
         }
 
         // ── Excel template download ───────────────────────────────────────────
 
         function downloadTemplate() {
-            const headers = ['Referencia', 'Descarregamento', 'Levantamento', 'Dias_Livres_Storage', 'Devolucao', 'Dias_Livres_Detention'];
+            const headers = ['Referencia', 'Descarga', 'Levantamento', 'Dias_Livres_Storage', 'Devolucao', 'Dias_Livres_Detention'];
             const example = ['CONT001', '01/03/2025', '15/03/2025', '7', '30/03/2025', '7'];
             const ws = XLSX.utils.aoa_to_sheet([headers, example]);
 
