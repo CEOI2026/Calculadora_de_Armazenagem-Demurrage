@@ -296,6 +296,100 @@
             color: white;
         }
 
+        .result-btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .result-btn-group .result-copy-btn {
+            margin-top: 0;
+        }
+
+        .result-pdf-btn {
+            flex: 1;
+            padding: 11px;
+            background: white;
+            color: #555;
+            border: 1.5px solid #bbb;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: none;
+            min-height: unset;
+        }
+
+        .result-pdf-btn:hover {
+            background: #555;
+            color: white;
+            border-color: #555;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            .header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .result-header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .result-free-days {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .form-container > form,
+            .result-btn-group {
+                display: none !important;
+            }
+
+            #result {
+                display: block !important;
+                margin-top: 0;
+            }
+
+            .print-header {
+                display: flex !important;
+            }
+        }
+
+        .print-header {
+            display: none;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #1e3a5f;
+        }
+
+        .print-header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e3a5f;
+        }
+
+        .print-header-meta {
+            font-size: 12px;
+            color: #888;
+            text-align: right;
+        }
+
         .period-item {
             background: #f9f9f9;
             border: 1px solid #ddd;
@@ -642,7 +736,17 @@
             });
 
             const resultDiv = document.getElementById('result');
+            const today = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
             resultDiv.innerHTML = `
+                <div class="print-header">
+                    <div>
+                        <div class="print-header-title">Armazenagem & Demurrage</div>
+                        <div style="font-size:12px;color:#888;margin-top:2px;">Resumo de Custos</div>
+                    </div>
+                    <div class="print-header-meta">
+                        Emitido em ${today}
+                    </div>
+                </div>
                 <div class="result-header">
                     <div class="result-label">Total a Pagar</div>
                     <div class="result-total">€${cost.toFixed(2)}</div>
@@ -654,7 +758,10 @@
                     </div>
                     ${periodsHTML}
                 </div>
-                <button class="result-copy-btn" onclick="copyResult()">Copiar resumo para enviar ao cliente</button>
+                <div class="result-btn-group">
+                    <button class="result-copy-btn" onclick="copyResult()">Copiar resumo</button>
+                    <button class="result-pdf-btn" onclick="exportPDF()">Exportar PDF</button>
+                </div>
             `;
             lastResult = { cost, freeDays, freeDatesLabel, breakdown };
             resultDiv.classList.add('show');
@@ -702,6 +809,10 @@
                     btn.style.color = '';
                 }, 2000);
             });
+        }
+
+        function exportPDF() {
+            window.print();
         }
 
         function resetForm() {
