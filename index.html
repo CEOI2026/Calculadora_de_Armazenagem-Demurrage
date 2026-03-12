@@ -497,6 +497,7 @@
     <script>
         let periodCount = 0;
         let periods = [];
+        let lastResult = null;
 
         function initializePeriods() {
             periods = [
@@ -655,28 +656,39 @@
                 </div>
                 <button class="result-copy-btn" onclick="copyResult()">Copiar resumo para enviar ao cliente</button>
             `;
+            lastResult = { cost, freeDays, freeDatesLabel, breakdown };
             resultDiv.classList.add('show');
         }
 
         function copyResult() {
+            if (!lastResult) return;
+            const { cost, freeDays, freeDatesLabel, breakdown } = lastResult;
             const lines = [];
-            const totalEl = document.querySelector('.result-total');
-            if (totalEl) lines.push(`Total: ${totalEl.textContent.trim()}\n`);
 
-            const freeDays = document.querySelector('.result-free-days');
-            if (freeDays) {
-                const label = freeDays.querySelector('.free-label')?.textContent.trim() || '';
-                const dates = freeDays.querySelector('.free-dates')?.textContent.trim() || '';
-                lines.push(`${label}${dates ? '  (' + dates + ')' : ''}`);
-            }
+            lines.push(`Armazenagem & Demurrage — Resumo de Custos`);
+            lines.push(`${'─'.repeat(42)}`);
+            lines.push(`Dias Livres: ${freeDays} dias${freeDatesLabel ? '  (' + freeDatesLabel + ')' : ''}`);
+            lines.push('');
 
-            document.querySelectorAll('.result-period').forEach(p => {
-                const name = p.querySelector('.result-period-name')?.textContent.trim() || '';
-                const sub = p.querySelector('.result-period-subtotal')?.textContent.trim() || '';
-                const dates = p.querySelector('.result-period-dates')?.textContent.trim() || '';
-                const calc = p.querySelector('.result-period-calc')?.textContent.trim() || '';
-                lines.push(`${name}: ${sub}  (${dates} — ${calc})`);
+            breakdown.forEach((item, idx) => {
+                const isLastItem = idx === breakdown.length - 1 && periods[periods.length - 1].days === 0;
+                const periodName = `Período ${idx + 1}${isLastItem ? ' (em diante)' : ''}`;
+                const datesLabel = item.calStart
+                    ? isLastItem
+                        ? `A partir de ${formatDate(item.calStart)}`
+                        : `${formatDate(item.calStart)} – ${formatDate(item.calEnd)}`
+                    : isLastItem
+                        ? `Dia ${item.startDay} em diante`
+                        : `Dias ${item.startDay}–${item.endDay}`;
+                lines.push(`${periodName}`);
+                lines.push(`  ${datesLabel}`);
+                lines.push(`  ${item.days} dias × €${item.rate.toFixed(2)}/dia = €${item.subtotal.toFixed(2)}`);
+                if (idx < breakdown.length - 1) lines.push('');
             });
+
+            lines.push('');
+            lines.push(`${'─'.repeat(42)}`);
+            lines.push(`TOTAL A PAGAR: €${cost.toFixed(2)}`);
 
             navigator.clipboard.writeText(lines.join('\n')).then(() => {
                 const btn = document.querySelector('.result-copy-btn');
