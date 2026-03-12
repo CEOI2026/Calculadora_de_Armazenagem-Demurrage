@@ -167,11 +167,6 @@
 
         #result {
             margin-top: 30px;
-            padding: 20px;
-            background: #1e3a5f;
-            border-radius: 4px;
-            color: white;
-            text-align: center;
             display: none;
         }
 
@@ -181,38 +176,124 @@
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            background: #1e3a5f;
+            border-radius: 8px 8px 0 0;
+            padding: 20px 24px;
+            text-align: center;
+        }
+
+        .result-label {
+            color: rgba(255,255,255,0.65);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
         }
 
         .result-total {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 15px;
+            font-size: 40px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -1px;
         }
 
-        .result-details {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 6px;
-            font-size: 14px;
-            text-align: left;
+        .result-body {
+            border: 1px solid #dde3ec;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
         }
 
-        .result-row {
+        .result-free-days {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f0f4f8;
+            border-bottom: 1px solid #dde3ec;
+            font-size: 13px;
+            color: #555;
         }
 
-        .result-row:last-child {
-            margin-bottom: 0;
+        .result-free-days .free-label {
+            font-weight: 500;
+        }
+
+        .result-free-days .free-dates {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .result-period {
+            border-bottom: 1px solid #eaeef2;
+            padding: 14px 16px;
+            background: white;
+        }
+
+        .result-period:last-child {
+            border-bottom: none;
+        }
+
+        .result-period-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+
+        .result-period-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: #1e3a5f;
+        }
+
+        .result-period-subtotal {
+            font-weight: 700;
+            font-size: 15px;
+            color: #1e3a5f;
+        }
+
+        .result-period-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-period-dates {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .result-period-calc {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .result-copy-btn {
+            width: 100%;
+            margin-top: 12px;
+            padding: 11px;
+            background: white;
+            color: #1e3a5f;
+            border: 1.5px solid #1e3a5f;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: none;
+            min-height: unset;
+        }
+
+        .result-copy-btn:hover {
+            background: #1e3a5f;
+            color: white;
         }
 
         .period-item {
@@ -487,9 +568,21 @@
             renderPeriods();
         }
 
+        function addCalendarDays(date, days) {
+            const result = new Date(date);
+            result.setDate(result.getDate() + days);
+            return result;
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
         function calculate() {
             const freeDays = parseInt(document.getElementById('freeDays').value) || 0;
             const totalDays = parseInt(document.getElementById('totalDays').value) || 0;
+            const releaseDateStr = document.getElementById('releaseDate').value;
+            const releaseDate = releaseDateStr ? new Date(releaseDateStr) : null;
 
             let cost = 0;
             let chargedDays = Math.max(0, totalDays - freeDays);
@@ -509,44 +602,94 @@
                     endDay: daysFromStart + daysInPeriod,
                     days: daysInPeriod,
                     rate: period.rate,
-                    subtotal: periodCost
+                    subtotal: periodCost,
+                    calStart: releaseDate ? addCalendarDays(releaseDate, daysFromStart) : null,
+                    calEnd: releaseDate ? addCalendarDays(releaseDate, daysFromStart + daysInPeriod - 1) : null,
                 });
 
                 chargedDays -= daysInPeriod;
                 daysFromStart += daysInPeriod;
             }
 
-            const resultDiv = document.getElementById('result');
-            let detailsHTML = `
-                <div class="result-total">€${cost.toFixed(2)}</div>
-                <div class="result-details">
-                    <div class="result-row">
-                        <span>Dias Livres:</span>
-                        <span>${freeDays} dias</span>
-                    </div>
-            `;
+            const freeDatesLabel = releaseDate && freeDays > 0
+                ? `${formatDate(releaseDate)} – ${formatDate(addCalendarDays(releaseDate, freeDays - 1))}`
+                : '';
 
+            let periodsHTML = '';
             breakdown.forEach((item, idx) => {
                 const isLastItem = idx === breakdown.length - 1 && periods[periods.length - 1].days === 0;
-                const periodLabel = isLastItem
-                    ? `Período ${idx + 1} (dia ${item.startDay} em diante)`
-                    : `Período ${idx + 1} (dias ${item.startDay}-${item.endDay})`;
-                detailsHTML += `
-                    <div class="result-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <span>${periodLabel}:</span>
-                        <span>${item.days} × €${item.rate.toFixed(2)}</span>
-                    </div>
-                    <div class="result-row" style="opacity: 0.9; margin-bottom: 8px;">
-                        <span style="font-size: 12px;">Subtotal:</span>
-                        <span style="font-size: 12px;">€${item.subtotal.toFixed(2)}</span>
-                    </div>
-                `;
+                const periodName = `Período ${idx + 1}${isLastItem ? ' — em diante' : ''}`;
+                const datesLabel = item.calStart
+                    ? isLastItem
+                        ? `A partir de ${formatDate(item.calStart)}`
+                        : `${formatDate(item.calStart)} – ${formatDate(item.calEnd)}`
+                    : isLastItem
+                        ? `Dia ${item.startDay} em diante`
+                        : `Dias ${item.startDay}–${item.endDay}`;
+                const calcLabel = `${item.days} dias × €${item.rate.toFixed(2)}/dia`;
+                periodsHTML += `
+                    <div class="result-period">
+                        <div class="result-period-top">
+                            <span class="result-period-name">${periodName}</span>
+                            <span class="result-period-subtotal">€${item.subtotal.toFixed(2)}</span>
+                        </div>
+                        <div class="result-period-bottom">
+                            <span class="result-period-dates">${datesLabel}</span>
+                            <span class="result-period-calc">${calcLabel}</span>
+                        </div>
+                    </div>`;
             });
 
-            detailsHTML += '</div>';
-
-            resultDiv.innerHTML = detailsHTML;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="result-header">
+                    <div class="result-label">Total a Pagar</div>
+                    <div class="result-total">€${cost.toFixed(2)}</div>
+                </div>
+                <div class="result-body">
+                    <div class="result-free-days">
+                        <span class="free-label">Dias Livres — ${freeDays} dias</span>
+                        <span class="free-dates">${freeDatesLabel}</span>
+                    </div>
+                    ${periodsHTML}
+                </div>
+                <button class="result-copy-btn" onclick="copyResult()">Copiar resumo para enviar ao cliente</button>
+            `;
             resultDiv.classList.add('show');
+        }
+
+        function copyResult() {
+            const lines = [];
+            const totalEl = document.querySelector('.result-total');
+            if (totalEl) lines.push(`Total: ${totalEl.textContent.trim()}\n`);
+
+            const freeDays = document.querySelector('.result-free-days');
+            if (freeDays) {
+                const label = freeDays.querySelector('.free-label')?.textContent.trim() || '';
+                const dates = freeDays.querySelector('.free-dates')?.textContent.trim() || '';
+                lines.push(`${label}${dates ? '  (' + dates + ')' : ''}`);
+            }
+
+            document.querySelectorAll('.result-period').forEach(p => {
+                const name = p.querySelector('.result-period-name')?.textContent.trim() || '';
+                const sub = p.querySelector('.result-period-subtotal')?.textContent.trim() || '';
+                const dates = p.querySelector('.result-period-dates')?.textContent.trim() || '';
+                const calc = p.querySelector('.result-period-calc')?.textContent.trim() || '';
+                lines.push(`${name}: ${sub}  (${dates} — ${calc})`);
+            });
+
+            navigator.clipboard.writeText(lines.join('\n')).then(() => {
+                const btn = document.querySelector('.result-copy-btn');
+                const original = btn.textContent;
+                btn.textContent = 'Copiado!';
+                btn.style.background = '#1e3a5f';
+                btn.style.color = 'white';
+                setTimeout(() => {
+                    btn.textContent = original;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 2000);
+            });
         }
 
         function resetForm() {
