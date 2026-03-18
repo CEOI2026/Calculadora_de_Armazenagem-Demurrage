@@ -518,6 +518,13 @@
             return el ? el.value : 'release';
         }
 
+        function getPricingEngine() {
+            if (!window.StorageDetentionPricing) {
+                throw new Error('Pricing engine is not loaded.');
+            }
+            return window.StorageDetentionPricing;
+        }
+
         function calculateDetention(pickupDate, releaseDate) {
             const enabled = document.getElementById('detentionEnabled').checked;
             if (!enabled) return null;
@@ -1532,4 +1539,166 @@
             const file = event.target.files[0];
             if (file) processExcelFile(file);
         }
+
+        // Engine-backed pricing overrides. This keeps DOM/rendering code in this file
+        // while moving pricing rules into pricing-engine.js.
+        calculateDetention = function(pickupDate, releaseDate) {
+            const enabled = document.getElementById('detentionEnabled').checked;
+            if (!enabled) return null;
+
+            const returnDate = parseDate(document.getElementById('returnDate').value);
+            const detentionFreeDays = parseInt(document.getElementById('detentionFreeDays').value) || 0;
+            if (!returnDate) return null;
+
+            const startMode = getDetentionStartMode('single');
+            const detention = getPricingEngine().calculateDetention({
+                releaseDate,
+                pickupDate,
+                returnDate,
+                detentionFreeDays,
+                startMode,
+                periods: detentionPeriods,
+            });
+
+            if (!detention) return null;
+
+            const freeDatesLabel = detention.freeStartDate && detention.freeEndDate
+                ? `${formatDate(detention.freeStartDate)} â€“ ${formatDate(detention.freeEndDate)}`
+                : '';
+
+            return {
+                cost: detention.cost,
+                breakdown: detention.breakdown,
+                detentionFreeDays: detention.detentionFreeDays,
+                freeDatesLabel,
+                returnDate: detention.returnDate,
+                startLabel: startMode === 'release' ? 'descarga' : 'levantamento'
+            };
+        };
+
+        calculate = function() {
+            const freeDays = parseInt(document.getElementById('freeDays').value) || 0;
+            const releaseDate = parseDate(document.getElementById('releaseDate').value);
+            const pickupDate = parseDate(document.getElementById('pickupDate').value);
+            const storage = getPricingEngine().calculateStorage({
+                releaseDate,
+                pickupDate,
+                freeDays,
+                periods,
+            });
+
+            const totalDays = storage.error ? 0 : storage.totalDays;
+            document.getElementById('totalDays').value = totalDays > 0 ? String(totalDays) : '';
+
+            const cost = storage.error ? 0 : storage.cost;
+            const breakdown = storage.error ? [] : storage.breakdown;
+            const freeDatesLabel = storage.freeStartDate && storage.freeEndDate
+                ? `${formatDate(storage.freeStartDate)} â€“ ${formatDate(storage.freeEndDate)}`
+                : '';
+            const detention = calculateDetention(pickupDate, releaseDate);
+            const grandTotal = cost + (detention ? detention.cost : 0);
+
+            const resultDiv = document.getElementById('result');
+            const today = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            renderSingleResult(resultDiv, {
+                today,
+                cost,
+                freeDays,
+                freeDatesLabel,
+                breakdown,
+                detention,
+                grandTotal
+            });
+            lastResult = { cost, freeDays, freeDatesLabel, breakdown, detention, grandTotal };
+        };
+
+        calcStorageForRow = function(row) {
+            return getPricingEngine().calculateStorage({
+                releaseDate: parseDate(row.releaseDate),
+                pickupDate: parseDate(row.pickupDate),
+                freeDays: parseInt(row.freeDays) || 0,
+                periods,
+            });
+        };
+
+        calcDetentionForRow = function(row) {
+            return getPricingEngine().calculateDetention({
+                releaseDate: parseDate(row.releaseDate),
+                pickupDate: parseDate(row.pickupDate),
+                returnDate: parseDate(row.returnDate),
+                detentionFreeDays: parseInt(row.detentionFreeDays) || 0,
+                startMode: getDetentionStartMode('batch'),
+                periods: detentionPeriods,
+            });
+        };
+
+        calculateDetention = function(pickupDate, releaseDate) {
+            const enabled = document.getElementById('detentionEnabled').checked;
+            if (!enabled) return null;
+
+            const returnDate = parseDate(document.getElementById('returnDate').value);
+            const detentionFreeDays = parseInt(document.getElementById('detentionFreeDays').value) || 0;
+            if (!returnDate) return null;
+
+            const startMode = getDetentionStartMode('single');
+            const detention = getPricingEngine().calculateDetention({
+                releaseDate,
+                pickupDate,
+                returnDate,
+                detentionFreeDays,
+                startMode,
+                periods: detentionPeriods,
+            });
+
+            if (!detention) return null;
+
+            const freeDatesLabel = detention.freeStartDate && detention.freeEndDate
+                ? `${formatDate(detention.freeStartDate)} - ${formatDate(detention.freeEndDate)}`
+                : '';
+
+            return {
+                cost: detention.cost,
+                breakdown: detention.breakdown,
+                detentionFreeDays: detention.detentionFreeDays,
+                freeDatesLabel,
+                returnDate: detention.returnDate,
+                startLabel: startMode === 'release' ? 'descarga' : 'levantamento'
+            };
+        };
+
+        calculate = function() {
+            const freeDays = parseInt(document.getElementById('freeDays').value) || 0;
+            const releaseDate = parseDate(document.getElementById('releaseDate').value);
+            const pickupDate = parseDate(document.getElementById('pickupDate').value);
+            const storage = getPricingEngine().calculateStorage({
+                releaseDate,
+                pickupDate,
+                freeDays,
+                periods,
+            });
+
+            const totalDays = storage.error ? 0 : storage.totalDays;
+            document.getElementById('totalDays').value = totalDays > 0 ? String(totalDays) : '';
+
+            const cost = storage.error ? 0 : storage.cost;
+            const breakdown = storage.error ? [] : storage.breakdown;
+            const freeDatesLabel = storage.freeStartDate && storage.freeEndDate
+                ? `${formatDate(storage.freeStartDate)} - ${formatDate(storage.freeEndDate)}`
+                : '';
+            const detention = calculateDetention(pickupDate, releaseDate);
+            const grandTotal = cost + (detention ? detention.cost : 0);
+
+            const resultDiv = document.getElementById('result');
+            const today = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            renderSingleResult(resultDiv, {
+                today,
+                cost,
+                freeDays,
+                freeDatesLabel,
+                breakdown,
+                detention,
+                grandTotal
+            });
+            lastResult = { cost, freeDays, freeDatesLabel, breakdown, detention, grandTotal };
+        };
 
