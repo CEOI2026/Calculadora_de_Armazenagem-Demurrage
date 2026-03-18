@@ -7,171 +7,156 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="header-top">
-                <div class="logo">
-                    <img src="assets/Navex_VH (3).png" alt="NAVEX Logo">
-                </div>
-                <div class="header-text">
-                    <h1>Calculadora de Storage e Detention</h1>
-                    <p>Calculadora de Custos Extra</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-container">
-        <form id="calculatorForm">
-            <div class="form-group">
-                <label for="releaseDate">
-                    Data de Descarga
-                    <span>Quando o contentor foi descarregado para o cais</span>
-                </label>
-                <input type="date" id="releaseDate">
-            </div>
-
-            <div class="form-group">
-                <label for="pickupDate">
-                    Data de Levantamento
-                    <span>Quando o contentor será levantado</span>
-                </label>
-                <input type="date" id="pickupDate">
-            </div>
-
-            <div class="form-group">
-                <label for="freeDays">
-                    Dias Livres
-                    <span>Período sem cobrança</span>
-                </label>
-                <input type="number" id="freeDays" value="7" min="0">
-            </div>
-
-            <button type="button" class="add-period-btn" onclick="addPeriod()">+ Adicionar Período</button>
-
-            <div class="periods-container" id="periodsContainer"></div>
-
-            <div class="form-group">
-                <label for="totalDays">
-                    Total de Dias
-                    <span>Desde a descarga até ao levantamento</span>
-                </label>
-                <input type="number" id="totalDays" value="" min="1" readonly>
-            </div>
-
-            <label class="detention-toggle">
-                <input type="checkbox" id="detentionEnabled" onchange="toggleDetention(); saveConfig()">
-                <span class="detention-toggle-pill">Incluir Detention</span>
-            </label>
-
-            <div class="detention-section" id="detentionSection">
-                <div class="form-group" style="margin-bottom:10px;">
-                    <label style="margin-bottom:6px;">Início da contagem</label>
-                    <div class="detention-start-opts">
-                        <label>
-                            <input type="radio" name="detentionStart" value="release" checked>
-                            A partir da descarga
-                        </label>
-                        <label>
-                            <input type="radio" name="detentionStart" value="pickup">
-                            A partir do levantamento
-                        </label>
+<body data-page="single">
+    <div class="page-shell">
+        <div class="container">
+            <div class="header">
+                <div class="header-top">
+                    <div class="logo">
+                        <img src="assets/Navex_VH (3).png" alt="NAVEX Logo">
+                    </div>
+                    <div class="header-text">
+                        <h1>Calculadora de Storage e Detention</h1>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label for="returnDate">
-                        Data de Devolução
-                        <span>Quando o contentor é devolvido vazio ao armador</span>
-                    </label>
-                    <input type="date" id="returnDate">
+            </div>
+
+            <div class="form-container">
+                <div class="page-switcher">
+                    <a href="index.html" class="active">Individual</a>
+                    <a href="batch.html">Multiplos Contentores</a>
                 </div>
-                <div class="form-group">
-                    <label for="detentionFreeDays">
-                        Dias Livres (Detention)
-                        <span>Dias acordados sem cobrança</span>
-                    </label>
-                    <input type="number" id="detentionFreeDays" value="7" min="0">
-                </div>
-                <button type="button" class="add-period-btn" onclick="addDetentionPeriod()">+ Adicionar Período Detention</button>
-                <div class="periods-container" id="detentionPeriodsContainer"></div>
-            </div>
 
-            <div class="button-group">
-                <button type="button" onclick="calculate()">Calcular</button>
-                <button type="button" class="secondary" onclick="resetForm()">Limpar Tudo</button>
-            </div>
-        </form>
-
-        <div id="result"></div>
-
-        <!-- Batch Calculator -->
-        <div class="batch-section">
-            <div class="batch-section-toggle" onclick="toggleBatchSection()">
-                <span class="batch-section-title">Calcular Múltiplos Contentores</span>
-                <span class="batch-toggle-arrow" id="batchToggleArrow">▾</span>
-            </div>
-
-            <div class="batch-section-body" id="batchSectionBody">
-                <div class="batch-section-sub">As tarifas definidas acima aplicam-se a todos os contentores.</div>
-
-                <div class="form-group" style="margin-bottom:14px;">
-                    <label style="margin-bottom:6px;font-size:13px;">Detention: Início da contagem</label>
-                    <div class="detention-start-opts">
-                        <label>
-                            <input type="radio" name="batchDetentionStart" value="release" checked>
-                            A partir da descarga
-                        </label>
-                        <label>
-                            <input type="radio" name="batchDetentionStart" value="pickup">
-                            A partir do levantamento
-                        </label>
+                <div class="section-header">
+                    <div>
+                        <h2>Calculo Individual</h2>
                     </div>
                 </div>
 
-                <div class="drop-zone" id="dropZone" onclick="document.getElementById('excelFileInput').click()">
-                    <div class="drop-zone-icon">📂</div>
-                    <div class="drop-zone-text">Arraste um ficheiro Excel aqui<br>ou <strong>clique para selecionar</strong></div>
-                    <div class="drop-zone-sub">.xlsx · .xls · .csv</div>
-                    <div class="drop-zone-or">─── ou ───</div>
-                    <button type="button" class="drop-zone-download" onclick="event.stopPropagation(); downloadTemplate()">⬇ Descarregar Template</button>
-                    <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="loadExcelFile(event)">
+                <div class="calculator-grid">
+                    <div class="surface surface-form">
+                        <div class="surface-head">
+                            <h3>Parametros do Contentor</h3>
+                        </div>
+
+                        <form id="calculatorForm">
+                            <div class="single-input-grid">
+                                <div class="form-group">
+                                    <label for="releaseDate">
+                                        Data de Descarga
+                                    </label>
+                                    <input type="date" id="releaseDate">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="pickupDate">
+                                        Data de Levantamento
+                                    </label>
+                                    <input type="date" id="pickupDate">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="returnDate">
+                                        Data de Devolucao
+                                    </label>
+                                    <input type="date" id="returnDate">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="totalDays">
+                                        Dias no Terminal
+                                    </label>
+                                    <input type="number" id="totalDays" value="" min="1" readonly>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="containerDays">
+                                        Dias com o Contentor
+                                    </label>
+                                    <input type="number" id="containerDays" value="" min="1" readonly>
+                                </div>
+                            </div>
+
+                            <div class="tariff-grid single-tariff-grid">
+                                <div class="tariff-card batch-config-card">
+                                    <div class="tariff-card-head tariff-card-head-inline">
+                                        <span class="surface-kicker">Storage</span>
+                                        <h4>Storage</h4>
+                                        <button type="button" class="add-period-btn add-period-btn-inline" onclick="addPeriod()">+ Periodo</button>
+                                    </div>
+
+                                    <div class="batch-config-panel">
+                                        <div class="batch-card-top batch-card-top-single">
+                                            <div class="form-group">
+                                                <label for="freeDays">
+                                                    Dias Livres
+                                                </label>
+                                                <input type="number" id="freeDays" value="7" min="0">
+                                            </div>
+                                        </div>
+
+                                        <div class="periods-container" id="periodsContainer"></div>
+                                    </div>
+                                </div>
+
+                                <div class="tariff-card tariff-card-detention single-detention-card batch-config-card">
+                                    <div class="tariff-card-head tariff-card-head-inline">
+                                        <span class="surface-kicker">Detention</span>
+                                        <h4>Detention</h4>
+                                        <button type="button" class="add-period-btn add-period-btn-inline" onclick="addDetentionPeriod()">+ Periodo</button>
+                                    </div>
+
+                                    <div class="detention-section batch-config-panel single-detention-config" id="detentionSection">
+                                        <div class="single-detention-top">
+                                            <div class="form-group">
+                                                <label for="detentionFreeDays">
+                                                    Dias Livres
+                                                </label>
+                                                <input type="number" id="detentionFreeDays" value="7" min="0">
+                                            </div>
+
+                                            <div class="form-group detention-start-group">
+                                                <label>Inicio da Contagem</label>
+                                                <div class="detention-start-opts">
+                                                    <label>
+                                                        <input type="radio" name="detentionStart" value="release" checked>
+                                                        Descarga
+                                                    </label>
+                                                    <label>
+                                                        <input type="radio" name="detentionStart" value="pickup">
+                                                        Levantamento
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="periods-container" id="detentionPeriodsContainer"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="button-group single-actions">
+                                <button type="button" onclick="calculate()">Calcular</button>
+                                <button type="button" class="secondary" onclick="resetForm()">Limpar Tudo</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="surface surface-result">
+                        <div class="surface-head">
+                            <h3>Resumo</h3>
+                        </div>
+                        <div id="result"></div>
+                    </div>
                 </div>
 
-                <div class="batch-table-meta" id="batchTableMeta">Sem contentores carregados</div>
-
-                <div class="batch-table-wrapper">
-                    <table class="batch-table">
-                        <thead>
-                            <tr>
-                                <th>Referência</th>
-                                <th>Descarga</th>
-                                <th>Levantamento</th>
-                                <th>Dias Livres<br>Storage</th>
-                                <th>Devolução</th>
-                                <th>Dias Livres<br>Detention</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="batchTableBody"></tbody>
-                    </table>
-                </div>
-
-                <button type="button" class="add-row-btn" onclick="addBatchRow()">+ Adicionar Contentor</button>
-
-                <div class="button-group" style="margin-top:0;">
-                    <button type="button" onclick="calculateBatch()">Calcular Todos</button>
-                    <button type="button" class="secondary" onclick="clearBatch()">Limpar Tabela</button>
-                </div>
-
-                <div class="batch-results" id="batchResults"></div>
-
-                <div class="result-btn-group" id="batchExportBtns" style="display:none;">
-                    <button class="result-copy-btn" onclick="copyBatchResult()">Copiar resumo</button>
-                    <button class="result-pdf-btn" onclick="exportBatchPDF()">Exportar PDF</button>
+                <div class="mode-link-card surface">
+                    <div>
+                        <h3>Multiplos Contentores</h3>
+                    </div>
+                    <a class="mode-link" href="batch.html">Ir para Multiplos Contentores</a>
                 </div>
             </div>
-        </div>
-
         </div>
     </div>
 
