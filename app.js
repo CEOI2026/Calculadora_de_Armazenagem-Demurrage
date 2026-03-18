@@ -80,12 +80,15 @@ function clearPrintModes() {
     }
 }
 
-function triggerPrint(mode) {
+function triggerPrint(mode, filename) {
     document.body.classList.remove('print-mode-single', 'print-mode-batch');
     document.body.classList.add(mode === 'batch' ? 'print-mode-batch' : 'print-mode-single');
     if (printCleanupTimeout) clearTimeout(printCleanupTimeout);
     printCleanupTimeout = setTimeout(clearPrintModes, 30000);
+    const originalTitle = document.title;
+    if (filename) document.title = filename;
     window.print();
+    document.title = originalTitle;
 }
 
 window.addEventListener('afterprint', clearPrintModes);
@@ -640,7 +643,10 @@ function copyResult() {
 
 function exportPDF() {
     if (!lastResult) return;
-    triggerPrint('single');
+    const now = new Date();
+    const fileDate = now.toISOString().slice(0, 10);
+    const fileTime = `${String(now.getHours()).padStart(2,'0')}h${String(now.getMinutes()).padStart(2,'0')}`;
+    triggerPrint('single', `Storage_${fileDate}_${fileTime}`);
 }
 
 function recalculateSingleIfNeeded() {
@@ -1218,7 +1224,11 @@ function exportBatchPDF() {
 
     const area = ensureBatchPrintArea();
     area.innerHTML = htmlContent;
-    triggerPrint('batch');
+    const n = resultRows.length;
+    const now = new Date();
+    const fileDate = now.toISOString().slice(0, 10);
+    const fileTime = `${String(now.getHours()).padStart(2,'0')}h${String(now.getMinutes()).padStart(2,'0')}`;
+    triggerPrint('batch', `Storage_Batch_${n}_contentores_${fileDate}_${fileTime}`);
 }
 
 function excelDateToInputValue(value) {
