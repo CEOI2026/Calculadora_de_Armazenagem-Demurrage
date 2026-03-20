@@ -412,14 +412,17 @@ function calculateDays() {
     }
 
     if (containerDaysInput) {
-        if (!pickupDate || !returnDate) {
+        const startMode = getDetentionStartMode('single');
+        const startDate = startMode === 'release' ? releaseDate : pickupDate;
+        if (!startDate || !returnDate) {
             containerDaysInput.value = '';
         } else {
             const containerDays = getPricingEngine().calculateDetention({
+                releaseDate,
                 pickupDate,
                 returnDate,
                 detentionFreeDays: 0,
-                startMode: 'pickup',
+                startMode,
                 periods: []
             });
             containerDaysInput.value = containerDays ? String(containerDays.totalDays) : '';
@@ -1337,7 +1340,10 @@ document.addEventListener('change', function onChange(event) {
         saveConfig();
     }
 
-    if (isSinglePage() && event.target.matches('.period-input, .det-period-input, #freeDays, #detentionFreeDays, input[name="detentionStart"]')) {
+    if (isSinglePage() && event.target.matches('input[name="detentionStart"]')) {
+        calculateDays();
+        recalculateSingleIfNeeded();
+    } else if (isSinglePage() && event.target.matches('.period-input, .det-period-input, #freeDays, #detentionFreeDays')) {
         recalculateSingleIfNeeded();
     }
 
